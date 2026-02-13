@@ -1,4 +1,3 @@
-// src/components/ProductCard.tsx
 export default function ProductCard({ name, description, price, image, onAdd, isDark }: any) {
   return (
     <div className={`rounded-2xl shadow-sm border ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'} overflow-hidden hover:shadow-md transition-all`}>
