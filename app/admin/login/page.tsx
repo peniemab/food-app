@@ -1,29 +1,35 @@
-// 
-
-
-
 "use client";
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, User, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/app/lib/supabase'; // Importation du client Supabase
 
 export default function AdminLogin() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(''); // Supabase utilise l'email par défaut
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validUser = process.env.NEXT_PUBLIC_ADMIN_USER;
-    const validPass = process.env.NEXT_PUBLIC_ADMIN_PASS;
+    setError('');
+    setLoading(true);
 
-    if (username === validUser && password === validPass) {
-      localStorage.setItem('isAdminAuthenticated', 'true');
-      router.push('/admin');
+    // APPEL À SUPABASE AUTH
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (authError) {
+      setError('Identifiants invalides ou accès refusé.');
+      setLoading(false);
     } else {
-      setError('Identifiants invalides.');
+      // Si ça marche, Supabase gère la session tout seul
+      router.push('/admin');
+      router.refresh(); // Pour forcer la mise à jour des cookies de session
     }
   };
 
@@ -47,15 +53,15 @@ export default function AdminLogin() {
           )}
 
           <div>
-            <label className="block text-xs font-black uppercase text-gray-400 mb-2">Utilisateur</label>
+            <label className="block text-xs font-black uppercase text-gray-400 mb-2">Email Admin</label>
             <div className="relative">
               <User className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-10 pr-4 outline-none text-gray-900"
-                placeholder="Nom d'utilisateur"
+                placeholder="votre@email.com"
                 required
               />
             </div>
@@ -78,9 +84,10 @@ export default function AdminLogin() {
 
           <button
             type="submit"
-            className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-transform"
+            disabled={loading}
+            className={`w-full bg-gray-900 text-white py-4 rounded-xl font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-transform ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            Se connecter
+            {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
 

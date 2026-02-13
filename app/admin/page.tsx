@@ -11,14 +11,23 @@ export default function AdminDashboard() {
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // État pour éviter le clignotement
   const prevOrdersCount = useRef<number | null>(null);
 
   const [newPlat, setNewPlat] = useState({ name: '', description: '', price: '', image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500' });
 
   useEffect(() => {
-    // Vérification de sécurité
-    const auth = localStorage.getItem('isAdminAuthenticated');
-    if (!auth) { router.push('/login'); return; }
+    // --- VÉRIFICATION DE SÉCURITÉ SUPABASE AUTH ---
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.replace('/login');
+      } else {
+        setIsLoading(false);
+        fetchData();
+      }
+    };
 
     const fetchData = async () => {
       const { data: menuData } = await supabase.from('menu').select('*').order('id', { ascending: false });
@@ -37,8 +46,9 @@ export default function AdminDashboard() {
       }
     };
 
-    fetchData();
+    checkUser();
 
+    // REALTIME
     const channel = supabase.channel('realtime-orders')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload: any) => {
         setOrders(prev => [payload.new, ...prev]);
@@ -76,14 +86,17 @@ export default function AdminDashboard() {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('isAdminAuthenticated');
+  // --- LOGOUT SÉCURISÉ ---
+  const logout = async () => {
+    await supabase.auth.signOut();
     router.push('/');
   };
 
+  // Affichage d'un écran vide pendant la vérification pour éviter de voir le menu brièvement
+  if (isLoading) return <div className="min-h-screen bg-gray-900" />;
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* HEADER AVEC ONGLETS */}
       <header className="bg-white border-b sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="font-black italic text-xl uppercase tracking-tighter">Jacquie <span className="text-red-600">Admin</span></h1>
@@ -153,7 +166,6 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Bouton Ajouter */}
             <button onClick={() => setIsModalOpen(true)} className="border-4 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center p-8 hover:border-red-200 hover:bg-red-50 transition-all group">
               <PlusIcon className="h-12 w-12 text-gray-300 group-hover:text-red-400" />
               <span className="mt-4 font-bold text-gray-400 group-hover:text-red-500">Ajouter un plat</span>
@@ -176,7 +188,7 @@ export default function AdminDashboard() {
           </div>
         )}
       </main>
-    {/* --- LE FORMULAIRE MODAL (AJOUTÉ ICI) --- */}
+
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
