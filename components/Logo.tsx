@@ -14,13 +14,12 @@ export default function Logo({ className = "", showText = true }: LogoProps) {
       {/* Container avec une taille standard Tailwind (h-12 = 48px) */}
       <div className="relative h-12 w-12 flex-shrink-0">
         <Image 
-          src="/logo-jacquies.jpg" 
+          src="/j-kitchen-logo.jpg" 
           alt="Logo Jacquie's Kitchen" 
           fill
           sizes="48px"
-          priority // Charge le logo immédiatement
+          priority 
           className="object-contain"
-          // Si l'image est quand même introuvable, on affiche au moins l'icône
           onError={(e) => {
              console.error("Image introuvable");
           }}
