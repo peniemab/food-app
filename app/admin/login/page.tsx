@@ -16,9 +16,12 @@ export default function AdminLogin() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'jacquie2026') {
+    const validUser = process.env.NEXT_PUBLIC_ADMIN_USER;
+    const validPass = process.env.NEXT_PUBLIC_ADMIN_PASS;
+
+    if (username === validUser && password === validPass) {
       localStorage.setItem('isAdminAuthenticated', 'true');
-      router.push('/admin'); // <--- ON ENLÈVE "/page" ICI
+      router.push('/admin');
     } else {
       setError('Identifiants invalides.');
     }
